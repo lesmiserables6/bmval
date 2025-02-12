@@ -283,18 +283,39 @@ const responseImage = document.getElementById('response-image');
 const imageContainer = document.getElementById('image-container');
 const volumeSlider = document.getElementById('volume-slider');
 
+let currentlyPlaying = null;
+
+function stopAllSongs() {
+    [mainSong, yesSong, noSong].forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+    });
+    currentlyPlaying = null;
+}
+
+function playSong(song) {
+    stopAllSongs();
+    song.volume = volumeSlider.value;
+    song.play().catch(error => console.log('Error playing audio:', error));
+    currentlyPlaying = song;
+}
+
+// Set initial volume
 [mainSong, yesSong, noSong].forEach(audio => {
     audio.volume = 0.5;
 });
 
+// Start main song on first interaction
 document.addEventListener('click', function startMusic() {
-    mainSong.play();
+    playSong(mainSong);
     document.removeEventListener('click', startMusic);
 }, { once: true });
 
+// Volume control
 volumeSlider.addEventListener('input', (e) => {
+    const newVolume = e.target.value;
     [mainSong, yesSong, noSong].forEach(audio => {
-        audio.volume = e.target.value;
+        audio.volume = newVolume;
     });
 });
 
@@ -325,15 +346,8 @@ function respond(answer) {
         }
     };
 
-    // Stop all currently playing songs
-    [mainSong, yesSong, noSong].forEach(audio => {
-        audio.pause();
-        audio.currentTime = 0;
-    });
-
-    // Play the appropriate response song
-    responses[answer].song.volume = volumeSlider.value;
-    responses[answer].song.play();
+    // Handle audio
+    playSong(responses[answer].song);
 
     result.style.opacity = '0';
     responseImage.style.opacity = '0';
@@ -365,6 +379,15 @@ function respond(answer) {
         imageContainer.style.height = 'auto';
     }, 1000);
 }
+
+// Add event listeners to stop songs when they end
+[mainSong, yesSong, noSong].forEach(audio => {
+    audio.addEventListener('ended', () => {
+        if (audio === currentlyPlaying) {
+            currentlyPlaying = null;
+        }
+    });
+});
     </script>
 </body>
 </html>
